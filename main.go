@@ -12,7 +12,25 @@ func main() {
 	fmt.Println(match(pattern, testString))
 }
 
-func match(regex, test string) bool {
+func getInput() (string, string) {
+	var input string
+	fmt.Scanln(&input)
+	splitResult := strings.SplitN(input, separator, 2)
+	return splitResult[0], splitResult[1]
+}
+
+func match(pattern, test string) bool {
+	patternLength := len(pattern)
+	if len(test) < patternLength {
+		return false
+	}
+	if matchEqual(pattern, test[:patternLength]) {
+		return true
+	}
+	return match(pattern, test[1:])
+}
+
+func matchEqual(regex, test string) bool {
 	if regex == "" {
 		return true
 	}
@@ -20,16 +38,9 @@ func match(regex, test string) bool {
 		return false
 	}
 	if matchOne(regex[:1], test[:1]) {
-		return match(regex[1:], test[1:])
+		return matchEqual(regex[1:], test[1:])
 	}
 	return false
-}
-
-func getInput() (string, string) {
-	var input string
-	fmt.Scanln(&input)
-	splitResult := strings.SplitN(input, separator, 2)
-	return splitResult[0], splitResult[1]
 }
 
 func matchOne(regex, test string) bool {
