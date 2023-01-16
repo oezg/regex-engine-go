@@ -2,52 +2,36 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
 const separator = "|"
 
-var (
-	input      string
-	regex      string
-	testString string
-	result     bool
-)
-
 func main() {
-	getInput()
-	splitInput()
-	match()
-	showResult()
+	pattern, testString := getInput()
+	fmt.Println(match(pattern, testString))
 }
 
-func getInput() {
-	_, err := fmt.Scanln(&input)
-	if err != nil {
-		log.Fatal(err)
+func match(regex, test string) bool {
+	if regex == "" {
+		return true
 	}
+	if test == "" {
+		return false
+	}
+	if matchOne(regex[:1], test[:1]) {
+		return match(regex[1:], test[1:])
+	}
+	return false
 }
 
-func splitInput() {
+func getInput() (string, string) {
+	var input string
+	fmt.Scanln(&input)
 	splitResult := strings.SplitN(input, separator, 2)
-	regex = splitResult[0]
-	testString = splitResult[1]
+	return splitResult[0], splitResult[1]
 }
 
-func match() {
-	switch {
-	case regex == "":
-		result = true
-	case testString == "":
-		result = false
-	case regex == testString:
-		result = true
-	case regex == ".":
-		result = true
-	}
-}
-
-func showResult() {
-	fmt.Println(result)
+func matchOne(regex, test string) bool {
+	return regex == "." || regex == test
 }
