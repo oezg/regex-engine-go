@@ -3,6 +3,8 @@
 ## How to use
 Enter your regular expression and the string you want to match in one line separated by a pipe character `|`
 
+![mississipi](mississipi.png)
+
 ## About
 Regular expressions are a fundamental part of computer science and natural language processing. 
 In this project, I wrote an extendable regular expression engine that can handle 
