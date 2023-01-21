@@ -23,7 +23,7 @@ type Rex struct {
 
 func main() {
 	getInput()
-	fmt.Println(match())
+	fmt.Println(matchInput())
 }
 
 func getInput() {
@@ -42,36 +42,44 @@ func makeRegex(pattern string) {
 	regex = make([]Rex, len(pattern))
 	for i := range pattern {
 		if regex[i].escape {
-			regex[i].char = string(pattern[i])
-			regex[i].must = true
+			regex[i].set(string(pattern[i]))
 		} else {
 			switch string(pattern[i]) {
 			case "^":
 				if i == 0 {
 					mustBegin = true
 				} else {
-					regex[i].char = string(pattern[i])
-					regex[i].must = true
+					regex[i].set(string(pattern[i]))
 				}
 			case "$":
 				if i == len(pattern)-1 {
 					mustEnd = true
 				} else {
-					regex[i].char = string(pattern[i])
-					regex[i].must = true
+					regex[i].set(string(pattern[i]))
 				}
 			case "?":
+				if i == 0 || regex[i-1].char == "" {
+					log.Fatal("Regular expression contains an invalid '?'")
+				}
 				regex[i-1].must = false
 			case "+":
+				if i == 0 || regex[i-1].char == "" {
+					log.Fatal("Regular expression contains an invalid '+'")
+				}
 				regex[i-1].repeat = true
 			case "*":
+				if i == 0 || regex[i-1].char == "" {
+					log.Fatal("Regular expression contains an invalid '*'")
+				}
 				regex[i-1].must = false
 				regex[i-1].repeat = true
 			case "\\":
+				if i == len(pattern)-1 {
+					log.Fatal("Regular expression contains an invalid '\\'")
+				}
 				regex[i+1].escape = true
 			default:
-				regex[i].char = string(pattern[i])
-				regex[i].must = true
+				regex[i].set(string(pattern[i]))
 			}
 		}
 	}
@@ -86,91 +94,47 @@ func makeRegex(pattern string) {
 	regex = regex[:k]
 }
 
-func match() bool {
+func (rex *Rex) set(char string) {
+	rex.char = char
+	rex.must = true
+}
+
+func matchInput() bool {
 	switch {
 	case mustBegin && mustEnd:
-		return matchStrict(0, 0)
+		return match(0, 0, false) && match(len(regex)-1, len(test)-1, true)
 	case mustBegin:
-		return matchBeginning(0, 0)
+		return match(0, 0, false)
 	case mustEnd:
-		return matchEnd(len(regex)-1, len(test)-1)
+		return match(len(regex)-1, len(test)-1, true)
 	default:
 		return matchFlex(0)
 	}
 }
 
-func matchStrict(irx, itx int) bool {
-	if irx >= len(regex) && itx >= len(test) {
+func match(irx, itx int, back bool) bool {
+	if irx < 0 || irx >= len(regex) {
 		return true
-	}
-	if itx >= len(test) || irx >= len(regex) {
+	} else if itx < 0 || itx >= len(test) {
 		return false
 	}
 	rex := regex[irx]
+	change := 1
+	if back {
+		change = -1
+	}
 	if !rex.must {
-		if matchStrict(irx+1, itx) {
+		if match(irx+change, itx, back) {
 			return true
 		}
 	}
 	if matchChar(rex.char, string(test[itx])) {
 		if rex.repeat {
-			if matchStrict(irx, itx+1) {
+			if match(irx, itx+change, back) {
 				return true
 			}
 		}
-		if matchStrict(irx+1, itx+1) {
-			return true
-		}
-	}
-	return false
-}
-
-func matchBeginning(irx, itx int) bool {
-	if irx >= len(regex) {
-		return true
-	}
-	if itx >= len(test) {
-		return false
-	}
-	rex := regex[irx]
-	if !rex.must {
-		if matchBeginning(irx+1, itx) {
-			return true
-		}
-	}
-	if matchChar(rex.char, string(test[itx])) {
-		if rex.repeat {
-			if matchBeginning(irx, itx+1) {
-				return true
-			}
-		}
-		if matchBeginning(irx+1, itx+1) {
-			return true
-		}
-	}
-	return false
-}
-
-func matchEnd(irx, itx int) bool {
-	if irx < 0 {
-		return true
-	}
-	if itx < 0 {
-		return false
-	}
-	rex := regex[irx]
-	if !rex.must {
-		if matchEnd(irx-1, itx) {
-			return true
-		}
-	}
-	if matchChar(rex.char, string(test[itx])) {
-		if rex.repeat {
-			if matchEnd(irx, itx-1) {
-				return true
-			}
-		}
-		if matchEnd(irx-1, itx-1) {
+		if match(irx+change, itx+change, back) {
 			return true
 		}
 	}
@@ -181,7 +145,7 @@ func matchFlex(itx int) bool {
 	if itx >= len(test) {
 		return false
 	}
-	if matchBeginning(0, itx) {
+	if match(0, itx, false) {
 		return true
 	}
 	return matchFlex(itx + 1)
