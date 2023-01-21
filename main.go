@@ -47,9 +47,19 @@ func makeRegex(pattern string) {
 		} else {
 			switch string(pattern[i]) {
 			case "^":
-				mustBegin = true
+				if i == 0 {
+					mustBegin = true
+				} else {
+					regex[i].char = string(pattern[i])
+					regex[i].must = true
+				}
 			case "$":
-				mustEnd = true
+				if i == len(pattern)-1 {
+					mustEnd = true
+				} else {
+					regex[i].char = string(pattern[i])
+					regex[i].must = true
+				}
 			case "?":
 				regex[i-1].must = false
 			case "+":
