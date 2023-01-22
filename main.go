@@ -41,45 +41,46 @@ func getInput() {
 func makeRegex(pattern string) {
 	regex = make([]Rex, len(pattern))
 	for i := range pattern {
+		character := string(pattern[i])
 		if regex[i].escape {
-			regex[i].set(string(pattern[i]))
+			regex[i].set(character)
 		} else {
-			switch string(pattern[i]) {
+			switch character {
 			case "^":
 				if i == 0 {
 					mustBegin = true
 				} else {
-					regex[i].set(string(pattern[i]))
+					regex[i].set(character)
 				}
 			case "$":
 				if i == len(pattern)-1 {
 					mustEnd = true
 				} else {
-					regex[i].set(string(pattern[i]))
+					regex[i].set(character)
 				}
 			case "?":
 				if i == 0 || regex[i-1].char == "" {
-					log.Fatal("Regular expression contains an invalid '?'")
+					invalid(character)
 				}
 				regex[i-1].must = false
 			case "+":
 				if i == 0 || regex[i-1].char == "" {
-					log.Fatal("Regular expression contains an invalid '+'")
+					invalid(character)
 				}
 				regex[i-1].repeat = true
 			case "*":
 				if i == 0 || regex[i-1].char == "" {
-					log.Fatal("Regular expression contains an invalid '*'")
+					invalid(character)
 				}
 				regex[i-1].must = false
 				regex[i-1].repeat = true
 			case "\\":
 				if i == len(pattern)-1 {
-					log.Fatal("Regular expression contains an invalid '\\'")
+					invalid(character)
 				}
 				regex[i+1].escape = true
 			default:
-				regex[i].set(string(pattern[i]))
+				regex[i].set(character)
 			}
 		}
 	}
@@ -94,9 +95,13 @@ func makeRegex(pattern string) {
 	regex = regex[:k]
 }
 
-func (rex *Rex) set(char string) {
-	rex.char = char
+func (rex *Rex) set(character string) {
+	rex.char = character
 	rex.must = true
+}
+
+func invalid(metacharacter string) {
+	log.Fatalf("Regular expression contains an invalid '%s'", metacharacter)
 }
 
 func matchInput() bool {
