@@ -118,7 +118,11 @@ func matchInput() bool {
 }
 
 func match(irx, itx int, back bool) bool {
-	if irx < 0 || irx >= len(regex) {
+	if mustBegin && mustEnd && (irx < 0 || irx >= len(regex)) {
+		return itx < 0 || itx >= len(test)
+	} else if irx < 0 || irx >= len(regex) {
+		return true
+	} else if restIsNotMust(irx, back) {
 		return true
 	} else if itx < 0 || itx >= len(test) {
 		return false
@@ -158,4 +162,20 @@ func matchFlex(itx int) bool {
 
 func matchChar(patternChar, testChar string) bool {
 	return patternChar == "." || patternChar == testChar
+}
+
+func restIsNotMust(irx int, back bool) bool {
+	if back {
+		return allNotMust(regex[:irx+1])
+	}
+	return allNotMust(regex[irx:])
+}
+
+func allNotMust(regexEnd []Rex) bool {
+	for _, rex := range regexEnd {
+		if rex.must {
+			return false
+		}
+	}
+	return true
 }
