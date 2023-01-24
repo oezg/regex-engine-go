@@ -107,7 +107,7 @@ func invalid(metacharacter string) {
 func matchInput() bool {
 	switch {
 	case mustBegin && mustEnd:
-		return match(0, 0, false) && match(len(regex)-1, len(test)-1, true)
+		return match(len(regex)-1, len(test)-1, true) && match(0, 0, false)
 	case mustBegin:
 		return match(0, 0, false)
 	case mustEnd:
@@ -118,11 +118,14 @@ func matchInput() bool {
 }
 
 func match(irx, itx int, back bool) bool {
-	if mustBegin && mustEnd && (irx < 0 || irx >= len(regex)) {
-		return itx < 0 || itx >= len(test)
-	} else if irx < 0 || irx >= len(regex) {
-		return true
-	} else if restIsNotMust(irx, back) {
+	if mustBegin && mustEnd {
+		if itx < 0 || itx >= len(test) {
+			return irx < 0 || irx >= len(regex) || restIsNotMust(irx, back)
+		}
+		if irx < 0 || irx >= len(regex) {
+			return false
+		}
+	} else if irx < 0 || irx >= len(regex) || restIsNotMust(irx, back) {
 		return true
 	} else if itx < 0 || itx >= len(test) {
 		return false
